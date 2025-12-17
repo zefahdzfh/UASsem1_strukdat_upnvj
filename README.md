@@ -20,6 +20,8 @@ Proyek ini adalah aplikasi berbasis *Command Line Interface* (CLI) yang dibuat m
 | :--- | :--- | :--- |
 | **Hudzaifah Ibnu Puase** | **2510501107** | Lead Developer |
 | **Fathussabil** | **2510501120** | Lead Developer |
+| Nabiel PMMB | 2510501118 | Developer |
+| Muhammad Alfrido Pasha | 2510501129 | Developer |
 
 ---
 
