@@ -21,13 +21,91 @@ struct Penjualan {
 struct Produk *headProduk = NULL;
 struct Penjualan *headJual = NULL;
 
-// -------------------- FUNGSI PRODUK ---------------------
+struct Produk* cariProduk(int id) {
+    struct Produk *t = headProduk;
+    while (t != NULL) {
+        if (t->id == id) return t;
+        t = t->next;
+    }
+    return NULL;
+}
+
+void simpanProdukKeFile() {
+    FILE *f = fopen("produk.txt", "w");
+    struct Produk *p = headProduk;
+    if (!f) return;
+    while (p != NULL) {
+        fprintf(f, "%d;%s;%d;%d\n", p->id, p->nama, p->stok, p->harga);
+        p = p->next;
+    }
+    fclose(f);
+}
+
+void simpanPenjualanKeFile() {
+    FILE *f = fopen("penjualan.txt", "w");
+    struct Penjualan *p = headJual;
+    if (!f) return;
+    while (p != NULL) {
+        fprintf(f, "%d;%s;%d;%s\n",
+                p->idProduk, p->namaProduk, p->jumlah, p->tanggal);
+        p = p->next;
+    }
+    fclose(f);
+}
+
+void muatProdukDariFile() {
+    FILE *f = fopen("produk.txt", "r");
+    if (!f) return;
+    while (!feof(f)) {
+        struct Produk *baru = malloc(sizeof(struct Produk));
+        if (fscanf(f, "%d;%[^;];%d;%d\n",
+                   &baru->id, baru->nama, &baru->stok, &baru->harga) == 4) {
+            baru->next = NULL;
+            if (headProduk == NULL) headProduk = baru;
+            else {
+                struct Produk *t = headProduk;
+                while (t->next != NULL) t = t->next;
+                t->next = baru;
+            }
+        } else free(baru);
+    }
+    fclose(f);
+}
+
+void muatPenjualanDariFile() {
+    FILE *f = fopen("penjualan.txt", "r");
+    if (!f) return;
+    while (!feof(f)) {
+        struct Penjualan *baru = malloc(sizeof(struct Penjualan));
+        if (fscanf(f, "%d;%[^;];%d;%[^\n]\n",
+                   &baru->idProduk,
+                   baru->namaProduk,
+                   &baru->jumlah,
+                   baru->tanggal) == 4) {
+            baru->next = NULL;
+            if (headJual == NULL) headJual = baru;
+            else {
+                struct Penjualan *t = headJual;
+                while (t->next != NULL) t = t->next;
+                t->next = baru;
+            }
+        } else free(baru);
+    }
+    fclose(f);
+}
 
 void tambahProduk() {
-    struct Produk *baru = (struct Produk*) malloc(sizeof(struct Produk));
+    int id;
+    printf("Masukkan ID produk: ");
+    scanf("%d", &id);
 
-    printf("\nMasukkan ID produk: ");
-    scanf("%d", &baru->id);
+    if (cariProduk(id) != NULL) {
+        printf("ID sudah terdaftar. Tambah produk dibatalkan\n");
+        return;
+    }
+
+    struct Produk *baru = malloc(sizeof(struct Produk));
+    baru->id = id;
     printf("Masukkan nama produk: ");
     scanf(" %[^\n]", baru->nama);
     printf("Masukkan stok produk: ");
@@ -37,169 +115,205 @@ void tambahProduk() {
 
     baru->next = NULL;
 
-    if (headProduk == NULL)
-        headProduk = baru;
+    if (headProduk == NULL) headProduk = baru;
     else {
-        struct Produk *temp = headProduk;
-        while (temp->next != NULL) temp = temp->next;
-        temp->next = baru;
+        struct Produk *t = headProduk;
+        while (t->next != NULL) t = t->next;
+        t->next = baru;
     }
-
-    printf("\nProduk berhasil ditambahkan!\n");
+    printf("Produk berhasil ditambahkan\n");
 }
 
 void tampilProduk() {
-    struct Produk *temp = headProduk;
-    if (temp == NULL) {
-        printf("\nTidak ada produk.\n");
+    struct Produk *t = headProduk;
+    if (t == NULL) {
+        printf("Tidak ada produk\n");
         return;
     }
-
-    printf("\n=== DAFTAR PRODUK ===\n");
-    while (temp != NULL) {
+    while (t != NULL) {
         printf("ID: %d | Nama: %s | Stok: %d | Harga: %d\n",
-            temp->id, temp->nama, temp->stok, temp->harga);
-        temp = temp->next;
+               t->id, t->nama, t->stok, t->harga);
+        t = t->next;
     }
-}
-
-struct Produk* cariProduk(int id) {
-    struct Produk *temp = headProduk;
-    while (temp != NULL) {
-        if (temp->id == id)
-            return temp;
-        temp = temp->next;
-    }
-    return NULL;
 }
 
 void menuCariProduk() {
     int id;
-    printf("\nMasukkan ID produk yang dicari: ");
+    printf("Masukkan ID produk: ");
     scanf("%d", &id);
 
     struct Produk *p = cariProduk(id);
-
-    if (p == NULL)
-        printf("Produk tidak ditemukan.\n");
+    if (p == NULL) printf("Produk tidak ditemukan\n");
     else {
-        printf("\nProduk ditemukan:\n");
         printf("ID: %d\nNama: %s\nStok: %d\nHarga: %d\n",
-                p->id, p->nama, p->stok, p->harga);
+               p->id, p->nama, p->stok, p->harga);
     }
 }
 
 void hapusProduk() {
     int id;
-    printf("\nMasukkan ID produk yang akan dihapus: ");
+    printf("Masukkan ID produk: ");
     scanf("%d", &id);
 
-    struct Produk *temp = headProduk;
+    struct Produk *t = headProduk;
     struct Produk *prev = NULL;
 
-    while (temp != NULL && temp->id != id) {
-        prev = temp;
-        temp = temp->next;
+    while (t != NULL && t->id != id) {
+        prev = t;
+        t = t->next;
     }
 
-    if (temp == NULL) {
-        printf("Produk tidak ditemukan.\n");
+    if (t == NULL) {
+        printf("Produk tidak ditemukan\n");
         return;
     }
 
-    if (prev == NULL)
-        headProduk = temp->next;
-    else
-        prev->next = temp->next;
+    if (prev == NULL) headProduk = t->next;
+    else prev->next = t->next;
 
-    free(temp);
-    printf("Produk berhasil dihapus.\n");
+    free(t);
+    printf("Produk berhasil dihapus\n");
 }
 
-// -------------------- FUNGSI PENJUALAN ---------------------
+void ubahProduk() {
+    int id;
+    printf("Masukkan ID produk yang ingin diubah: ");
+    scanf("%d", &id);
+
+    struct Produk *p = cariProduk(id);
+
+    if (p == NULL) {
+        printf("Produk tidak ditemukan\n");
+        return;
+    }
+
+    printf("Nama baru: ");
+    scanf(" %[^\n]", p->nama);
+    printf("Stok baru: ");
+    scanf("%d", &p->stok);
+    printf("Harga baru: ");
+    scanf("%d", &p->harga);
+
+    printf("Produk berhasil diubah\n");
+}
+
+void sortProduk() {
+    if (headProduk == NULL) return;
+
+    int swapped;
+    struct Produk *ptr;
+    struct Produk *last = NULL;
+
+    do {
+        swapped = 0;
+        ptr = headProduk;
+
+        while (ptr->next != last) {
+            if (ptr->id > ptr->next->id) {
+                int tid = ptr->id;
+                char tnama[50];
+                int tstok = ptr->stok;
+                int tharga = ptr->harga;
+
+                strcpy(tnama, ptr->nama);
+
+                ptr->id = ptr->next->id;
+                strcpy(ptr->nama, ptr->next->nama);
+                ptr->stok = ptr->next->stok;
+                ptr->harga = ptr->next->harga;
+
+                ptr->next->id = tid;
+                strcpy(ptr->next->nama, tnama);
+                ptr->next->stok = tstok;
+                ptr->next->harga = tharga;
+
+                swapped = 1;
+            }
+            ptr = ptr->next;
+        }
+        last = ptr;
+    } while (swapped);
+
+    printf("Data produk berhasil diurutkan\n");
+}
 
 void simpanPenjualan(int idP, char namaP[], int jumlah, char tanggal[]) {
-    struct Penjualan *baru = (struct Penjualan*) malloc(sizeof(struct Penjualan));
-
+    struct Penjualan *baru = malloc(sizeof(struct Penjualan));
     baru->idProduk = idP;
     strcpy(baru->namaProduk, namaP);
     baru->jumlah = jumlah;
     strcpy(baru->tanggal, tanggal);
     baru->next = NULL;
 
-    if (headJual == NULL)
-        headJual = baru;
+    if (headJual == NULL) headJual = baru;
     else {
-        struct Penjualan *temp = headJual;
-        while (temp->next != NULL) temp = temp->next;
-        temp->next = baru;
+        struct Penjualan *t = headJual;
+        while (t->next != NULL) t = t->next;
+        t->next = baru;
     }
 }
-
-void tampilPenjualan() {
-    struct Penjualan *temp = headJual;
-
-    if (temp == NULL) {
-        printf("\nBelum ada penjualan.\n");
-        return;
-    }
-
-    printf("\n=== RIWAYAT PENJUALAN ===\n");
-    while (temp != NULL) {
-        printf("ID Produk: %d | Nama: %s | Jumlah: %d | Tanggal: %s\n",
-                temp->idProduk, temp->namaProduk, temp->jumlah, temp->tanggal);
-        temp = temp->next;
-    }
-}
-
-// -------------------- MENU JUAL PRODUK ---------------------
 
 void jualProduk() {
     int id, jumlah;
     char tanggal[20];
 
-    printf("\nMasukkan ID produk yang ingin dijual: ");
+    printf("Masukkan ID produk: ");
     scanf("%d", &id);
 
     struct Produk *p = cariProduk(id);
-
     if (p == NULL) {
-        printf("Produk tidak ditemukan.\n");
+        printf("Produk tidak ditemukan\n");
         return;
     }
 
-    printf("Masukkan jumlah yang ingin dijual: ");
+    printf("Jumlah jual: ");
     scanf("%d", &jumlah);
 
     if (jumlah > p->stok) {
-        printf("Stok tidak mencukupi! Stok sekarang: %d\n", p->stok);
+        printf("Stok tidak cukup\n");
         return;
     }
 
-    printf("Masukkan tanggal penjualan (DD-MM-YYYY): ");
+    printf("Tanggal (DD-MM-YYYY): ");
     scanf(" %[^\n]", tanggal);
 
     p->stok -= jumlah;
 
     simpanPenjualan(p->id, p->nama, jumlah, tanggal);
 
-    printf("\nPenjualan berhasil!\nSisa stok: %d\n", p->stok);
+    printf("Penjualan berhasil\n");
 }
 
-// -------------------- MAIN PROGRAM ---------------------
+void tampilPenjualan() {
+    struct Penjualan *t = headJual;
+    if (t == NULL) {
+        printf("Belum ada penjualan\n");
+        return;
+    }
+    while (t != NULL) {
+        printf("ID: %d | Nama: %s | Jumlah: %d | Tanggal: %s\n",
+               t->idProduk, t->namaProduk, t->jumlah, t->tanggal);
+        t = t->next;
+    }
+}
 
 int main() {
     int pilih;
 
+    muatProdukDariFile();
+    muatPenjualanDariFile();
+
     do {
-        printf("\n=== MENU TOKO ===\n");
+        printf("\nMENU TOKO\n");
         printf("1. Tambah Produk\n");
-        printf("2. Tampilkan Semua Produk\n");
+        printf("2. Tampilkan Produk\n");
         printf("3. Cari Produk\n");
         printf("4. Hapus Produk\n");
         printf("5. Jual Produk\n");
-        printf("6. Tampilkan Riwayat Penjualan\n");
-        printf("0. Keluar\n");
+        printf("6. Tampilkan Penjualan\n");
+        printf("7. Ubah Produk\n");
+        printf("8. Urutkan Produk\n");
+        printf("0. Simpan dan Keluar\n");
         printf("Pilih menu: ");
         scanf("%d", &pilih);
 
@@ -210,9 +324,17 @@ int main() {
             case 4: hapusProduk(); break;
             case 5: jualProduk(); break;
             case 6: tampilPenjualan(); break;
-            case 0: printf("Keluar...\n"); break;
-            default: printf("Pilihan tidak valid!\n");
+            case 7: ubahProduk(); break;
+            case 8: sortProduk(); break;
+            case 0:
+                simpanProdukKeFile();
+                simpanPenjualanKeFile();
+                printf("Data disimpan. Keluar...\n");
+                break;
+            default:
+                printf("Pilihan tidak valid\n");
         }
+
     } while (pilih != 0);
 
     return 0;
